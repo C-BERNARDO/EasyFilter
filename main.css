@@ -51,88 +51,120 @@ body {
 }
 
 /* ══════════════════════════════════════
-   LOADING OVERLAY  — CIMB style
+   LOADING OVERLAY  — CIMB OCTO style
 ══════════════════════════════════════ */
 .loading-overlay {
   position: fixed; inset: 0; z-index: 9999;
-  background: rgba(255,255,255,.92);
-  backdrop-filter: blur(4px);
+  background: rgba(255,255,255,.96);
   display: flex; align-items: center; justify-content: center;
+  flex-direction: column;
+  animation: overlay-in .2s ease;
+}
+@keyframes overlay-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
 }
 
-/* ── Sweeping top progress bar ── */
+/* ── Red sweep bar — identical to CIMB website ── */
 .load-bar {
   position: absolute; top: 0; left: 0; right: 0;
-  height: 3px;
-  background: rgba(196,18,48,.15);
+  height: 4px;
+  background: rgba(196,18,48,.12);
   overflow: hidden;
 }
 .load-bar-fill {
-  height: 100%;
-  width: 40%;
-  background: linear-gradient(90deg, transparent, #C41230 30%, #ff6b6b 70%, transparent);
-  animation: bar-sweep 1.6s ease-in-out infinite;
+  position: absolute; top: 0; left: 0;
+  height: 100%; width: 55%;
+  background: linear-gradient(90deg,
+    transparent 0%,
+    #C41230     25%,
+    #e8334f     55%,
+    #C41230     75%,
+    transparent 100%);
+  animation: bar-sweep 1.55s cubic-bezier(.4,0,.2,1) infinite;
 }
 @keyframes bar-sweep {
-  0%   { transform: translateX(-120%); }
-  100% { transform: translateX(320%); }
+  0%   { transform: translateX(-100%); }
+  100% { transform: translateX(280%); }
 }
 
-/* ── Centred card ── */
+/* ── Card ── */
 .load-card {
   display: flex; flex-direction: column; align-items: center;
-  gap: 10px;
-  background: #ffffff;
+  gap: 0;
+  background: #fff;
   border: 1px solid #e8eaee;
-  border-radius: 16px;
-  padding: 36px 52px 32px;
-  box-shadow: 0 4px 32px rgba(0,0,0,.10), 0 1px 4px rgba(0,0,0,.06);
-  text-align: center;
-  animation: card-in .25s ease;
+  border-radius: 20px;
+  padding: 44px 56px 40px;
+  box-shadow:
+    0 0 0 1px rgba(196,18,48,.06),
+    0 8px 40px rgba(0,0,0,.09),
+    0 2px 8px  rgba(0,0,0,.05);
+  animation: card-in .3s cubic-bezier(.34,1.56,.64,1);
+  min-width: 320px; text-align: center;
 }
 @keyframes card-in {
-  from { opacity: 0; transform: translateY(10px) scale(.97); }
-  to   { opacity: 1; transform: translateY(0) scale(1); }
+  from { opacity: 0; transform: translateY(16px) scale(.95); }
+  to   { opacity: 1; transform: translateY(0)    scale(1); }
 }
 
-/* Logo icon */
-.load-logo {
-  margin-bottom: 4px;
-  animation: logo-pulse 2s ease-in-out infinite;
+/* ── CIMB diamond logo + wordmark ── */
+.load-logo-wrap {
+  display: flex; flex-direction: column; align-items: center; gap: 10px;
+  margin-bottom: 22px;
 }
-@keyframes logo-pulse {
-  0%, 100% { transform: scale(1);    opacity: 1; }
-  50%       { transform: scale(1.06); opacity: .85; }
+.load-diamond {
+  filter: drop-shadow(0 4px 12px rgba(196,18,48,.28));
+  animation: diamond-breathe 2.4s ease-in-out infinite;
+}
+@keyframes diamond-breathe {
+  0%, 100% { transform: scale(1);    filter: drop-shadow(0 4px 12px rgba(196,18,48,.28)); }
+  50%       { transform: scale(1.07); filter: drop-shadow(0 6px 18px rgba(196,18,48,.42)); }
+}
+.load-cimb-text {
+  font-size: 1.05rem; font-weight: 800; color: #C41230;
+  letter-spacing: .18em; font-family: 'Inter', sans-serif;
 }
 
-/* Text */
+/* ── Text ── */
+.load-body { margin-bottom: 22px; }
 .load-title {
-  font-size: .98rem; font-weight: 700;
-  color: #1a1f2e; letter-spacing: -.01em;
-  margin-top: 2px;
+  font-size: 1rem; font-weight: 700;
+  color: #1a1f2e; letter-spacing: -.015em;
+  margin-bottom: 5px;
 }
-.load-sub {
-  font-size: .76rem; color: #6b7280;
-  margin-top: -4px; margin-bottom: 6px;
+.load-sub { font-size: .78rem; color: #6b7280; line-height: 1.5; }
+
+/* ── Progress track ── */
+.load-track {
+  width: 200px; height: 3px;
+  background: #f0f1f3; border-radius: 99px;
+  overflow: hidden; margin-bottom: 18px;
+}
+.load-track-fill {
+  height: 100%; width: 45%;
+  background: linear-gradient(90deg, #C41230, #ff6070);
+  border-radius: 99px;
+  animation: track-sweep 1.55s cubic-bezier(.4,0,.2,1) infinite;
+}
+@keyframes track-sweep {
+  0%   { transform: translateX(-120%); }
+  100% { transform: translateX(340%); }
 }
 
-/* ── Three-dot pulse ── */
-.load-dots {
-  display: flex; align-items: center; gap: 7px;
-  margin-top: 6px;
-}
+/* ── Bouncing dots ── */
+.load-dots { display: flex; gap: 8px; align-items: center; }
 .load-dot {
-  width: 8px; height: 8px; border-radius: 50%;
+  width: 9px; height: 9px; border-radius: 50%;
   background: #C41230;
-  display: inline-block;
   animation: dot-bounce 1.3s ease-in-out infinite both;
 }
 .load-dot:nth-child(1) { animation-delay: 0s; }
-.load-dot:nth-child(2) { animation-delay: .18s; }
-.load-dot:nth-child(3) { animation-delay: .36s; }
+.load-dot:nth-child(2) { animation-delay: .2s; }
+.load-dot:nth-child(3) { animation-delay: .4s; }
 @keyframes dot-bounce {
-  0%, 80%, 100% { transform: scale(.55); opacity: .35; }
-  40%           { transform: scale(1);   opacity: 1; }
+  0%, 80%, 100% { transform: translateY(0)    scale(.65); opacity: .35; }
+  40%           { transform: translateY(-7px) scale(1);   opacity: 1; }
 }
 
 /* ══════════════════════════════════════

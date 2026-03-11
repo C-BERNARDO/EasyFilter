@@ -13,30 +13,39 @@
 
   <!-- ── Loading Overlay ── -->
   <div class="loading-overlay" id="loadingOverlay" style="display:none">
-    <!-- Top progress bar sweep -->
+    <!-- Red sweep bar across the very top -->
     <div class="load-bar"><div class="load-bar-fill"></div></div>
 
-    <!-- Centered card -->
+    <!-- Centred card -->
     <div class="load-card">
-      <!-- CIMB-style logo mark -->
-      <div class="load-logo">
-        <svg width="42" height="42" viewBox="0 0 42 42" fill="none">
-          <rect width="42" height="42" rx="10" fill="#C41230"/>
-          <path d="M10 21C10 15 15 10 21 10C24.5 10 27.6 11.5 29.8 14" stroke="white" stroke-width="3" stroke-linecap="round"/>
-          <path d="M32 21C32 27 27 32 21 32C17.5 32 14.4 30.5 12.2 28" stroke="white" stroke-width="3" stroke-linecap="round"/>
-          <circle cx="21" cy="21" r="4" fill="white"/>
+
+      <!-- CIMB diamond logo mark -->
+      <div class="load-logo-wrap">
+        <svg class="load-diamond" width="64" height="64" viewBox="0 0 64 64" fill="none">
+          <rect x="9" y="9" width="46" height="46" rx="10" fill="#C41230"
+                transform="rotate(45 32 32)"/>
+          <rect x="18" y="29" width="28" height="6" rx="3" fill="white"/>
         </svg>
+        <span class="load-cimb-text">CIMB</span>
       </div>
 
-      <p class="load-title">Processing</p>
-      <p class="load-sub">Reading and analysing your data</p>
+      <div class="load-body">
+        <p class="load-title">Processing your file</p>
+        <p class="load-sub">Reading and analysing data, please wait…</p>
+      </div>
 
-      <!-- Three-dot pulse — CIMB style -->
+      <!-- Animated progress track -->
+      <div class="load-track">
+        <div class="load-track-fill"></div>
+      </div>
+
+      <!-- Bouncing dots -->
       <div class="load-dots">
         <span class="load-dot"></span>
         <span class="load-dot"></span>
         <span class="load-dot"></span>
       </div>
+
     </div>
   </div>
 
@@ -69,6 +78,10 @@
 
       <!-- Upload -->
       <div class="sblock">
+        <div class="sblock-title">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          Data Source
+        </div>
 
         <div class="upload-zone" id="uploadZone">
           <div class="upl-icon">
