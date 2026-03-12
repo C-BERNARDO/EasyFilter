@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Login Activity Analyzer — Security Bank</title>
+  <link rel="stylesheet" href="main.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+</head>
+<body>
+
+  <!-- ===== TOP NAV ===== -->
+  <nav class="topnav">
+    <div class="topnav-inner">
+      <div class="brand">
+        <div class="brand-logo">
+          <svg width="28" height="28" viewBox="0 0 32 32" fill="none">
+            <rect width="32" height="32" rx="6" fill="#0050A0"/>
+            <path d="M8 22V14l8-6 8 6v8H20v-5h-4v5H8z" fill="white"/>
+          </svg>
+        </div>
+        <div class="brand-text">
+          <span class="brand-name">Security Bank</span>
+          <span class="brand-divider">|</span>
+          <span class="brand-module">Login Activity Analyzer</span>
+        </div>
+      </div>
+      <div class="topnav-right">
+        <span class="nav-date" id="navDate"></span>
+      </div>
+    </div>
+  </nav>
+
+  <!-- ===== PAGE BODY ===== -->
+  <div class="page-shell">
+
+    <!-- Page title row -->
+    <div class="page-title-row">
+      <div>
+        <h1 class="page-title">Collector Login Report</h1>
+        <p class="page-subtitle">Upload one or more Excel or CSV files to extract the earliest login time per collector across all files.</p>
+      </div>
+    </div>
+
+    <!-- ===== DASHBOARD GRID ===== -->
+    <div class="dashboard-grid">
+
+      <!-- LEFT PANEL -->
+      <aside class="panel left-panel">
+        <div class="panel-header">
+          <svg width="16" height="16" viewBox="0 0 20 20" fill="none"><path d="M10 2v11M5 8l5-6 5 6" stroke="#0050A0" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M3 15h14v2H3z" fill="#0050A0"/></svg>
+          <span>Upload Files</span>
+        </div>
+        <div class="panel-body">
+
+          <div class="upload-zone" id="uploadZone">
+            <div class="upload-icon-wrap">
+              <svg width="36" height="36" viewBox="0 0 48 48" fill="none">
+                <path d="M24 10v22" stroke="#0050A0" stroke-width="2.5" stroke-linecap="round"/>
+                <path d="M15 19l9-9 9 9" stroke="#0050A0" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M9 36h30" stroke="#0050A0" stroke-width="2.5" stroke-linecap="round"/>
+                <path d="M9 36v4h30v-4" stroke="#0050A0" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </div>
+            <p class="upload-label">Drag &amp; drop files here</p>
+            <p class="upload-hint">Supports <strong>.xlsx</strong> and <strong>.csv</strong> &mdash; multiple files allowed</p>
+            <label class="upload-btn" for="fileInput">
+              <svg width="14" height="14" viewBox="0 0 20 20" fill="none"><path d="M10 3v10M5 8l5-5 5 5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M3 15h14" stroke="white" stroke-width="2" stroke-linecap="round"/></svg>
+              Choose Files
+              <input type="file" id="fileInput" accept=".xlsx,.xls,.csv" multiple hidden />
+            </label>
+          </div>
+
+          <!-- File pills -->
+          <div class="file-list-label" id="fileListLabel" style="display:none;">Selected files</div>
+          <div class="file-list" id="fileList"></div>
+
+          <!-- Status -->
+          <div class="status-bar" id="statusBar" style="display:none;">
+            <div class="status-spinner" id="statusSpinner"></div>
+            <span id="statusText">Processing...</span>
+          </div>
+
+          <!-- Error -->
+          <div class="error-box" id="errorSection" style="display:none;">
+            <div class="error-header">
+              <svg width="15" height="15" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="8" stroke="#c0392b" stroke-width="1.8"/><path d="M10 6v4M10 13v1" stroke="#c0392b" stroke-width="2" stroke-linecap="round"/></svg>
+              <span>Error</span>
+            </div>
+            <p class="error-msg" id="errorMsg"></p>
+            <button class="retry-btn" id="retryBtn">&#8635; Try Again</button>
+          </div>
+
+        </div>
+      </aside>
+
+      <!-- RIGHT PANEL -->
+      <main class="panel right-panel">
+        <div class="panel-header">
+          <svg width="16" height="16" viewBox="0 0 20 20" fill="none"><rect x="2" y="3" width="16" height="14" rx="2" stroke="#0050A0" stroke-width="1.8"/><path d="M2 7h16M7 7v10" stroke="#0050A0" stroke-width="1.8"/></svg>
+          <span>Results</span>
+          <span class="results-meta" id="resultsMeta"></span>
+        </div>
+        <div class="panel-body panel-body--table">
+
+          <!-- Empty state -->
+          <div class="empty-state" id="resultsEmpty">
+            <svg width="52" height="52" viewBox="0 0 52 52" fill="none">
+              <rect x="8" y="10" width="36" height="32" rx="4" stroke="#CBD5E0" stroke-width="2"/>
+              <path d="M8 18h36M18 18v24" stroke="#CBD5E0" stroke-width="2"/>
+              <path d="M26 30h10M26 36h6" stroke="#CBD5E0" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+            <p class="empty-title">No results to display</p>
+            <p class="empty-hint">Upload files on the left to generate the report.</p>
+          </div>
+
+          <!-- Table -->
+          <div class="table-scroll" id="tableScroll" style="display:none;">
+            <table class="data-table" id="dataTable">
+              <thead>
+                <tr>
+                  <th>Collector</th>
+                  <th>Login Time</th>
+                </tr>
+              </thead>
+              <tbody id="tableBody"></tbody>
+            </table>
+          </div>
+
+        </div>
+      </main>
+
+    </div><!-- /.dashboard-grid -->
+  </div><!-- /.page-shell -->
+
+  <script src="main.js"></script>
+</body>
+</html>
