@@ -30,8 +30,8 @@
       </div>
 
       <div class="load-body">
-        <p class="load-title">Processing your file</p>
-        <p class="load-sub">Reading and analysing data, please wait…</p>
+        <p class="load-title">Processing your files</p>
+        <p class="load-sub" id="loadSub">Reading and analysing data, please wait…</p>
       </div>
 
       <!-- Animated progress track -->
@@ -78,20 +78,23 @@
 
       <!-- Upload -->
       <div class="sblock">
+        <div class="sblock-title">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          Data Source
+        </div>
 
         <div class="upload-zone" id="uploadZone">
           <div class="upl-icon">
             <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="11" x2="12" y2="17"/><polyline points="9 14 12 11 15 14"/></svg>
           </div>
-          <p class="upl-label">Drop file here</p>
+          <p class="upl-label">Drop files here</p>
           <label class="btn-browse" for="fileInput">Browse…</label>
-          <input type="file" id="fileInput" accept=".xlsx,.xls" hidden />
-          <p class="upl-types">.xlsx · .xls</p>
+          <input type="file" id="fileInput" accept=".xlsx,.xls" multiple hidden />
+          <p class="upl-types">.xlsx · .xls · multiple files supported</p>
         </div>
 
         <div class="file-loaded-row" id="fileLoadedRow" style="display:none">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-          <span id="fileName">—</span>
+          <div class="file-chips" id="fileChips"></div>
         </div>
       </div>
 
@@ -141,6 +144,20 @@
         <div class="check-scroll" id="statusList"></div>
       </div>
 
+      <!-- Remark Type filter -->
+      <div class="sblock" id="remarkTypeBlock" style="display:none">
+        <div class="sblock-title">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><line x1="10" y1="9" x2="8" y2="9"/></svg>
+          Remark Type
+          <span class="sblock-count" id="remarkTypeSelCount">0</span>
+        </div>
+        <div class="quick-btns">
+          <button class="qbtn" id="remarkTypeAll">All</button>
+          <button class="qbtn" id="remarkTypeNone">None</button>
+        </div>
+        <div class="check-scroll" id="remarkTypeList"></div>
+      </div>
+
     </aside>
 
     <!-- ════ RIGHT CONTENT ════ -->
@@ -175,6 +192,17 @@
             </div>
             <div class="kpi-num" id="kpiAccounts">0</div>
             <div class="kpi-sub" id="kpiAccountsSub">unique account numbers</div>
+          </div>
+
+          <div class="kpi-card kpi-dials">
+            <div class="kpi-top">
+              <span class="kpi-lbl">Dials</span>
+              <div class="kpi-ico">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.6 1.18h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.77a16 16 0 0 0 6 6l.86-.86a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 21.73 16z"/></svg>
+              </div>
+            </div>
+            <div class="kpi-num" id="kpiDials">0</div>
+            <div class="kpi-sub">total dial attempts (all rows)</div>
           </div>
 
           <div class="kpi-card kpi-teal">

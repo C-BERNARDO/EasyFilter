@@ -302,14 +302,24 @@ body {
 .btn-browse:active { transform: translateY(0); }
 
 .file-loaded-row {
-  display: flex; align-items: center; gap: 6px;
-  margin-top: 10px; padding: 8px 10px;
+  margin-top: 10px;
+}
+.file-chips {
+  display: flex; flex-direction: column; gap: 5px;
+}
+.fchip-file {
+  display: flex; align-items: center; gap: 7px;
+  padding: 6px 9px;
   background: var(--green-lt); border: 1px solid var(--green-mid);
   border-radius: var(--radius-sm);
-  font-size: .76rem; font-weight: 500; color: var(--green);
+  font-size: .73rem; font-weight: 500; color: var(--green);
+  animation: fadeUp .18s ease both;
 }
-.file-loaded-row svg { flex-shrink: 0; color: var(--green); }
-#fileName { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 170px; }
+.fchip-file svg { flex-shrink: 0; }
+.fchip-file span {
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  max-width: 190px;
+}
 
 /* ── Quick buttons ── */
 .quick-btns { display: flex; gap: 5px; margin-bottom: 8px; }
@@ -454,6 +464,7 @@ body {
 
 /* Accent colors per card */
 .kpi-blue::before         { background: #1d6fd8; }
+.kpi-dials::before        { background: #0369a1; }
 .kpi-teal::before         { background: #0a7c6e; }
 .kpi-amber::before        { background: #b45309; }
 .kpi-rose::before         { background: var(--red); }
@@ -476,6 +487,7 @@ body {
   display: grid; place-items: center; flex-shrink: 0;
 }
 .kpi-blue         .kpi-ico { background: #eff6ff; color: #1d6fd8; }
+.kpi-dials        .kpi-ico { background: #e0f2fe; color: #0369a1; }
 .kpi-teal         .kpi-ico { background: #f0fdfa; color: #0a7c6e; }
 .kpi-amber        .kpi-ico { background: #fffbeb; color: #b45309; }
 .kpi-rose         .kpi-ico { background: var(--red-light); color: var(--red); }
@@ -536,6 +548,7 @@ body {
 .fchip-date   { background: #eff6ff; border: 1px solid #bfdbfe; color: #1d4ed8; }
 .fchip-client { background: #f0fdf4; border: 1px solid #bbf7d0; color: #15803d; }
 .fchip-status { background: var(--red-light); border: 1px solid var(--red-mid); color: var(--red); }
+.fchip-remark { background: #fff7ed; border: 1px solid #fed7aa; color: #c2410c; }
 .fchip-all    { background: var(--bg2); border: 1px solid var(--border2); color: var(--muted); }
 
 /* ══════════════════════════════════════

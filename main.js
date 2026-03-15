@@ -1,13 +1,15 @@
 /* ═══════════════════════════════════════
    STATE
 ═══════════════════════════════════════ */
-let allData      = [];   // [{date, account, client, balance, ptpAmount, claimPaid, relation, callStatus, status}]
+let allData      = [];   // [{date, account, client, balance, ptpAmount, claimPaid, relation, callStatus, status, remarkType}]
 let uniqueDates   = [];
 let uniqueClients = [];
 let uniqueStatuses = [];
-let selectedDates   = new Set();
-let selectedClients = new Set();
-let selectedStatuses = new Set();
+let uniqueRemarkTypes = [];
+let selectedDates       = new Set();
+let selectedClients     = new Set();
+let selectedStatuses    = new Set();
+let selectedRemarkTypes = new Set();
 
 /* ═══════════════════════════════════════
    DOM REFERENCES
@@ -15,7 +17,6 @@ let selectedStatuses = new Set();
 const fileInput      = document.getElementById('fileInput');
 const uploadZone     = document.getElementById('uploadZone');
 const fileLoadedRow  = document.getElementById('fileLoadedRow');
-const fileNameEl     = document.getElementById('fileName');
 const dateBlock      = document.getElementById('dateBlock');
 const clientBlock    = document.getElementById('clientBlock');
 const statusBlock    = document.getElementById('statusBlock');
@@ -25,6 +26,9 @@ const statusList     = document.getElementById('statusList');
 const dateSelCount   = document.getElementById('dateSelCount');
 const clientSelCount = document.getElementById('clientSelCount');
 const statusSelCount = document.getElementById('statusSelCount');
+const remarkTypeBlock    = document.getElementById('remarkTypeBlock');
+const remarkTypeList     = document.getElementById('remarkTypeList');
+const remarkTypeSelCount = document.getElementById('remarkTypeSelCount');
 const clientSearch   = document.getElementById('clientSearch');
 const emptyState     = document.getElementById('emptyState');
 const dashboard      = document.getElementById('dashboard');
@@ -34,6 +38,7 @@ const metaDates      = document.getElementById('metaDates');
 const metaClients    = document.getElementById('metaClients');
 const resetBtn       = document.getElementById('resetBtn');
 const kpiAccounts    = document.getElementById('kpiAccounts');
+const kpiDials       = document.getElementById('kpiDials');
 const kpiBalance     = document.getElementById('kpiBalance');
 const kpiPtpSum      = document.getElementById('kpiPtpSum');
 const kpiPtpCount    = document.getElementById('kpiPtpCount');
@@ -52,49 +57,84 @@ const breakdownWrap  = document.getElementById('breakdownWrap');
 const tableNote      = document.getElementById('tableNote');
 
 /* ═══════════════════════════════════════
-   FILE UPLOAD
+   FILE UPLOAD  — multi-file
 ═══════════════════════════════════════ */
-// Note: the <label for="fileInput"> inside uploadZone handles click-to-browse natively.
-// No extra uploadZone click listener needed — adding one caused the file dialog to open twice.
+// Note: the <label for="fileInput"> handles click-to-browse natively (no extra click listener needed).
 const loadingOverlay = document.getElementById('loadingOverlay');
+const loadSub        = document.getElementById('loadSub');
+const fileChips      = document.getElementById('fileChips');
 
-fileInput.addEventListener('change', e => { if (e.target.files[0]) processFile(e.target.files[0]); });
+fileInput.addEventListener('change', e => {
+  const files = [...e.target.files].filter(f => /\.(xlsx|xls)$/i.test(f.name));
+  if (files.length) processFiles(files);
+});
 
 uploadZone.addEventListener('dragover',  e => { e.preventDefault(); uploadZone.classList.add('drag-over'); });
 uploadZone.addEventListener('dragleave', () => uploadZone.classList.remove('drag-over'));
 uploadZone.addEventListener('drop', e => {
   e.preventDefault(); uploadZone.classList.remove('drag-over');
-  const f = e.dataTransfer.files[0];
-  if (f && /\.(xlsx|xls)$/i.test(f.name)) processFile(f);
+  const files = [...e.dataTransfer.files].filter(f => /\.(xlsx|xls)$/i.test(f.name));
+  if (files.length) processFiles(files);
 });
 
 resetBtn.addEventListener('click', resetAll);
 
-/* ── Parse Excel ── */
-function processFile(file) {
+/* ── Read a single file → array of raw row objects ── */
+function readFile(file, index, total) {
+  return new Promise((resolve, reject) => {
+    loadSub.textContent = `Reading file ${index + 1} of ${total}: ${file.name}`;
+    const reader = new FileReader();
+    reader.onload = e => {
+      try {
+        const wb   = XLSX.read(new Uint8Array(e.target.result), { type: 'array', cellDates: true });
+        const ws   = wb.Sheets[wb.SheetNames[0]];
+        const rows = XLSX.utils.sheet_to_json(ws, { defval: '' });
+        resolve({ rows, fileName: file.name });
+      } catch (err) {
+        reject(new Error(`${file.name}: ${err.message}`));
+      }
+    };
+    reader.onerror = () => reject(new Error(`Failed to read ${file.name}`));
+    reader.readAsArrayBuffer(file);
+  });
+}
+
+/* ── Process all selected files ── */
+async function processFiles(files) {
   loadingOverlay.style.display = 'flex';
-  const reader = new FileReader();
-  reader.onload = e => {
-    // Small timeout lets the browser paint the overlay before heavy parsing
-    setTimeout(() => {
-    try {
-      const wb   = XLSX.read(new Uint8Array(e.target.result), { type: 'array', cellDates: true });
-      const ws   = wb.Sheets[wb.SheetNames[0]];
-      const rows = XLSX.utils.sheet_to_json(ws, { defval: '' });
+  loadSub.textContent = `Preparing ${files.length} file${files.length > 1 ? 's' : ''}…`;
 
-      if (!rows.length) { loadingOverlay.style.display = 'none'; alert('The file appears to be empty.'); return; }
+  // Small delay to let the browser render the overlay
+  await new Promise(r => setTimeout(r, 50));
 
-      const keys       = Object.keys(rows[0]);
-      const findKey    = name => keys.find(k => k.trim().toLowerCase() === name.toLowerCase());
-      const dateKey    = findKey('date');
-      const accountKey = findKey('account no.');
-      const clientKey  = findKey('client');
-      const balanceKey = findKey('balance');
-      const ptpKey     = findKey('ptp amount');
-      const claimKey   = findKey('claim paid amount');
+  try {
+    // Read all files in parallel, but update progress label sequentially via index
+    const results = await Promise.all(
+      files.map((f, i) => readFile(f, i, files.length))
+    );
+
+    loadSub.textContent = 'Validating columns…';
+    await new Promise(r => setTimeout(r, 20));
+
+    // Validate columns per file, collect errors
+    const errors = [];
+    const allRows = [];
+
+    for (const { rows, fileName } of results) {
+      if (!rows.length) { errors.push(`"${fileName}" appears to be empty.`); continue; }
+
+      const keys          = Object.keys(rows[0]);
+      const findKey       = name => keys.find(k => k.trim().toLowerCase() === name.toLowerCase());
+      const dateKey       = findKey('date');
+      const accountKey    = findKey('account no.');
+      const clientKey     = findKey('client');
+      const balanceKey    = findKey('balance');
+      const ptpKey        = findKey('ptp amount');
+      const claimKey      = findKey('claim paid amount');
       const relationKey   = findKey('relation');
       const callStatusKey = findKey('call status');
       const statusKey     = findKey('status');
+      const remarkTypeKey = findKey('remark type');
 
       const missing = [];
       if (!dateKey)       missing.push('"Date"');
@@ -106,13 +146,14 @@ function processFile(file) {
       if (!relationKey)   missing.push('"Relation"');
       if (!callStatusKey) missing.push('"Call Status"');
       if (!statusKey)     missing.push('"Status"');
+
       if (missing.length) {
-        loadingOverlay.style.display = 'none';
-        alert(`Missing column(s): ${missing.join(', ')}\nPlease check your Excel file headers.`);
-        return;
+        errors.push(`"${fileName}" missing column(s): ${missing.join(', ')}`);
+        continue;
       }
 
-      allData = rows.map(row => ({
+      // Map rows from this file
+      const mapped = rows.map(row => ({
         date:       formatDate(row[dateKey]),
         account:    String(row[accountKey]).trim(),
         client:     String(row[clientKey]).trim(),
@@ -121,30 +162,64 @@ function processFile(file) {
         claimPaid:  parseBalance(row[claimKey]),
         relation:   String(row[relationKey]).trim(),
         callStatus: String(row[callStatusKey]).trim(),
-        status:     String(row[statusKey]).trim()
+        status:     String(row[statusKey]).trim(),
+        remarkType: remarkTypeKey ? String(row[remarkTypeKey]).trim() : ''
       })).filter(r => r.date && r.account);
 
-      fileNameEl.textContent = file.name;
-      fileLoadedRow.style.display = 'flex';
-
-      buildFilters();
-      topbarMeta.style.display = 'flex';
-      metaRows.textContent    = `${allData.length} rows`;
-      metaDates.textContent   = `${uniqueDates.length} dates`;
-      metaClients.textContent = `${uniqueClients.length} clients`;
-      emptyState.style.display = 'none';
-      dashboard.style.display  = 'flex';
-      refreshResults();
-
-    } catch (err) {
-      alert('Error reading file: ' + err.message);
-    } finally {
-      loadingOverlay.style.display = 'none';
-      fileInput.value = ''; // reset so same file can be re-uploaded
+      allRows.push(...mapped);
     }
-    }, 50);
-  };
-  reader.readAsArrayBuffer(file);
+
+    if (errors.length) {
+      alert('Some files had issues:\n\n' + errors.join('\n'));
+    }
+
+    if (!allRows.length) {
+      loadingOverlay.style.display = 'none';
+      fileInput.value = '';
+      return;
+    }
+
+    loadSub.textContent = 'Building dashboard…';
+    await new Promise(r => setTimeout(r, 20));
+
+    // Replace (don't accumulate) — fresh load each time
+    allData = allRows;
+
+    // Render file chips in sidebar
+    renderFileChips(files.map(f => f.name));
+
+    buildFilters();
+    topbarMeta.style.display = 'flex';
+    metaRows.textContent    = `${allData.length} rows`;
+    metaDates.textContent   = `${uniqueDates.length} dates`;
+    metaClients.textContent = `${uniqueClients.length} clients`;
+    emptyState.style.display = 'none';
+    dashboard.style.display  = 'flex';
+    refreshResults();
+
+  } catch (err) {
+    alert('Error: ' + err.message);
+  } finally {
+    loadingOverlay.style.display = 'none';
+    fileInput.value = '';
+  }
+}
+
+/* ── Render loaded file chips under upload zone ── */
+function renderFileChips(names) {
+  fileChips.innerHTML = '';
+  names.forEach(name => {
+    const chip = document.createElement('div');
+    chip.className = 'fchip-file';
+    chip.innerHTML = `
+      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+        <polyline points="14 2 14 8 20 8"/>
+      </svg>
+      <span>${name}</span>`;
+    fileChips.appendChild(chip);
+  });
+  fileLoadedRow.style.display = 'block';
 }
 
 /* ── Helpers ── */
@@ -190,14 +265,21 @@ function buildFilters() {
   uniqueStatuses = [...ss].sort((a,b) => a.localeCompare(b));
   selectedStatuses = new Set(uniqueStatuses);
 
+  // Remark Types
+  const rs = new Set(); allData.forEach(r => { if (r.remarkType) rs.add(r.remarkType); });
+  uniqueRemarkTypes = [...rs].sort((a,b) => a.localeCompare(b));
+  selectedRemarkTypes = new Set(uniqueRemarkTypes);
+
   renderDateList();
   renderClientList('');
   renderStatusList();
+  renderRemarkTypeList();
   updateCountBadges();
 
-  dateBlock.style.display   = 'block';
-  clientBlock.style.display = 'block';
-  statusBlock.style.display = 'block';
+  dateBlock.style.display       = 'block';
+  clientBlock.style.display     = 'block';
+  statusBlock.style.display     = 'block';
+  remarkTypeBlock.style.display = uniqueRemarkTypes.length ? 'block' : 'none';
 }
 
 /* ── Date checkboxes ── */
@@ -249,7 +331,29 @@ function renderStatusList() {
   });
 }
 
-/* ── Checkbox factory ── */
+/* ── Remark Type checkboxes ── */
+function renderRemarkTypeList() {
+  remarkTypeList.innerHTML = '';
+  uniqueRemarkTypes.forEach(rt => {
+    const item = makeCheckItem(rt, selectedRemarkTypes.has(rt), rt, (checked) => {
+      checked ? selectedRemarkTypes.add(rt) : selectedRemarkTypes.delete(rt);
+      updateCountBadges();
+      refreshResults();
+    });
+    remarkTypeList.appendChild(item);
+  });
+}
+
+document.getElementById('remarkTypeAll').addEventListener('click', () => {
+  selectedRemarkTypes = new Set(uniqueRemarkTypes);
+  syncCheckboxes(remarkTypeList, selectedRemarkTypes);
+  updateCountBadges(); refreshResults();
+});
+document.getElementById('remarkTypeNone').addEventListener('click', () => {
+  selectedRemarkTypes.clear();
+  syncCheckboxes(remarkTypeList, selectedRemarkTypes);
+  updateCountBadges(); refreshResults();
+});
 function makeCheckItem(value, checked, labelText, onChange) {
   const label = document.createElement('label');
   label.className = 'chk-item';
@@ -269,9 +373,10 @@ function syncCheckboxes(listEl, selectedSet) {
 }
 
 function updateCountBadges() {
-  dateSelCount.textContent   = selectedDates.size;
-  clientSelCount.textContent = selectedClients.size;
-  statusSelCount.textContent = selectedStatuses.size;
+  dateSelCount.textContent        = selectedDates.size;
+  clientSelCount.textContent      = selectedClients.size;
+  statusSelCount.textContent      = selectedStatuses.size;
+  remarkTypeSelCount.textContent  = selectedRemarkTypes.size;
 }
 
 /* ── Select / None ── */
@@ -313,7 +418,8 @@ function getFilteredRows() {
   return allData.filter(r =>
     selectedDates.has(r.date) &&
     selectedClients.has(r.client) &&
-    selectedStatuses.has(r.status)
+    selectedStatuses.has(r.status) &&
+    (uniqueRemarkTypes.length === 0 || selectedRemarkTypes.has(r.remarkType))
   );
 }
 
@@ -356,7 +462,11 @@ function refreshResults() {
   const totalConnected   = connectedUnique.length;
   const totalConnectedBal = connectedUnique.reduce((s, r) => s + r.balance, 0);
 
+  // Dials: total row count with NO deduplication — every dial attempt counted
+  const totalDials = filtered.length;
+
   animateNum(kpiAccounts, totalAccts, false);
+  animateNum(kpiDials, totalDials, false);
 
   // Balance: display exact full number (no abbreviation)
   animateNumExact(kpiBalance, totalBal);
@@ -370,13 +480,14 @@ function refreshResults() {
   animateNum(kpiConnected,  totalConnected,  false);
   animateNumExact(kpiConnectedBal, totalConnectedBal);
 
-  const allDatesSelected   = selectedDates.size === uniqueDates.length;
-  const allClientsSelected = selectedClients.size === uniqueClients.length;
-  const allStatusesSelected = selectedStatuses.size === uniqueStatuses.length;
+  const allDatesSelected      = selectedDates.size === uniqueDates.length;
+  const allClientsSelected    = selectedClients.size === uniqueClients.length;
+  const allStatusesSelected   = selectedStatuses.size === uniqueStatuses.length;
+  const allRemarkTypesSelected = !uniqueRemarkTypes.length || selectedRemarkTypes.size === uniqueRemarkTypes.length;
   kpiAccountsSub.textContent = `of ${allData.length} total rows`;
   kpiBalanceSub.textContent  = `${totalAccts} unique account${totalAccts !== 1 ? 's' : ''} summed`;
 
-  renderFilterSummary(allDatesSelected, allClientsSelected, allStatusesSelected);
+  renderFilterSummary(allDatesSelected, allClientsSelected, allStatusesSelected, allRemarkTypesSelected);
   renderBreakdown(unique, filtered);
   tableNote.textContent = `${totalAccts} unique account${totalAccts!==1?'s':''} · ${formatCurrencyExact(totalBal)}`;
 }
@@ -384,11 +495,11 @@ function refreshResults() {
 /* ═══════════════════════════════════════
    FILTER SUMMARY CHIPS
 ═══════════════════════════════════════ */
-function renderFilterSummary(allDates, allClients, allStatuses) {
+function renderFilterSummary(allDates, allClients, allStatuses, allRemarkTypes) {
   filterSummary.innerHTML = '';
 
-  if (allDates && allClients && allStatuses) {
-    filterSummary.appendChild(chip_('All dates · All clients · All statuses', 'fchip fchip-all'));
+  if (allDates && allClients && allStatuses && allRemarkTypes) {
+    filterSummary.appendChild(chip_('All dates · All clients · All statuses · All remark types', 'fchip fchip-all'));
     return;
   }
 
@@ -420,6 +531,18 @@ function renderFilterSummary(allDates, allClients, allStatuses) {
     });
     if (selectedStatuses.size > 5)
       filterSummary.appendChild(chip_(`+${selectedStatuses.size - 5} more statuses`, 'fchip fchip-status'));
+  }
+
+  if (uniqueRemarkTypes.length) {
+    if (allRemarkTypes) {
+      filterSummary.appendChild(chip_('All remark types', 'fchip fchip-remark'));
+    } else {
+      [...selectedRemarkTypes].sort().slice(0, 5).forEach(rt => {
+        filterSummary.appendChild(chip_(rt, 'fchip fchip-remark', 'Remark'));
+      });
+      if (selectedRemarkTypes.size > 5)
+        filterSummary.appendChild(chip_(`+${selectedRemarkTypes.size - 5} more`, 'fchip fchip-remark'));
+    }
   }
 }
 
@@ -657,18 +780,20 @@ function downloadConnected() {
 }
 
 function resetAll() {
-  allData = []; uniqueDates = []; uniqueClients = []; uniqueStatuses = [];
-  selectedDates.clear(); selectedClients.clear(); selectedStatuses.clear();
+  allData = []; uniqueDates = []; uniqueClients = []; uniqueStatuses = []; uniqueRemarkTypes = [];
+  selectedDates.clear(); selectedClients.clear(); selectedStatuses.clear(); selectedRemarkTypes.clear();
 
   fileInput.value = '';
-  fileLoadedRow.style.display = 'none';
-  dateBlock.style.display     = 'none';
-  clientBlock.style.display   = 'none';
-  statusBlock.style.display   = 'none';
-  topbarMeta.style.display    = 'none';
-  emptyState.style.display    = 'flex';
-  dashboard.style.display     = 'none';
-  dateList.innerHTML = ''; clientList.innerHTML = ''; statusList.innerHTML = '';
+  fileChips.innerHTML = '';
+  fileLoadedRow.style.display   = 'none';
+  dateBlock.style.display       = 'none';
+  clientBlock.style.display     = 'none';
+  statusBlock.style.display     = 'none';
+  remarkTypeBlock.style.display = 'none';
+  topbarMeta.style.display      = 'none';
+  emptyState.style.display      = 'flex';
+  dashboard.style.display       = 'none';
+  dateList.innerHTML = ''; clientList.innerHTML = ''; statusList.innerHTML = ''; remarkTypeList.innerHTML = '';
   clientSearch.value = '';
-  dateSelCount.textContent = clientSelCount.textContent = statusSelCount.textContent = '0';
+  dateSelCount.textContent = clientSelCount.textContent = statusSelCount.textContent = remarkTypeSelCount.textContent = '0';
 }
