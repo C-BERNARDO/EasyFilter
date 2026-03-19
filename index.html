@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Easy Filter</title>
+  <title>Easy filter</title>
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB2ZXJzaW9uPSIxLjEiIGlkPSJMYXllcl8xIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHhtbG5zOnhsaW5rPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5L3hsaW5rIiB4PSIwcHgiIHk9IjBweCIgdmlld0JveD0iMCAwIDExNC4wNyA5Mi41NCIgc3R5bGU9ImVuYWJsZS1iYWNrZ3JvdW5kOm5ldyAwIDAgMTE0LjA3IDkyLjU0OyIgeG1sOnNwYWNlPSJwcmVzZXJ2ZSI+PHN0eWxlIHR5cGU9InRleHQvY3NzIj4uc3Qwe2ZpbGw6I0U1MDAxOTt9LnN0MXtmaWxsOiM2NDAwMDg7fTwvc3R5bGU+PGcgaWQ9IkNJTUJfTG9nbyIgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoLTU5MyAtMzYuNDA1KSI+PHBhdGggaWQ9IlBhdGhfNzY1IiBjbGFzcz0ic3QwIiBkPSJNNjcyLjA1LDM2LjRINTkzbDM0Ljk4LDQ2LjI1aDc5LjA4TDY3Mi4wNSwzNi40eiI+PC9wYXRoPjxwYXRoIGlkPSJQYXRoXzc2NiIgY2xhc3M9InN0MSIgZD0iTTcwNy4wNyw4Mi42NmgtNzkuMDhsLTM0Ljk3LDQ2LjI5aDc5LjA0TDcwNy4wNyw4Mi42NnoiPjwvcGF0aD48L2c+PC9zdmc+">
   <link rel="apple-touch-icon" href="data:image/svg+xml;base64,PHN2ZyB2ZXJzaW9uPSIxLjEiIGlkPSJMYXllcl8xIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHhtbG5zOnhsaW5rPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5L3hsaW5rIiB4PSIwcHgiIHk9IjBweCIgdmlld0JveD0iMCAwIDExNC4wNyA5Mi41NCIgc3R5bGU9ImVuYWJsZS1iYWNrZ3JvdW5kOm5ldyAwIDAgMTE0LjA3IDkyLjU0OyIgeG1sOnNwYWNlPSJwcmVzZXJ2ZSI+PHN0eWxlIHR5cGU9InRleHQvY3NzIj4uc3Qwe2ZpbGw6I0U1MDAxOTt9LnN0MXtmaWxsOiM2NDAwMDg7fTwvc3R5bGU+PGcgaWQ9IkNJTUJfTG9nbyIgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoLTU5MyAtMzYuNDA1KSI+PHBhdGggaWQ9IlBhdGhfNzY1IiBjbGFzcz0ic3QwIiBkPSJNNjcyLjA1LDM2LjRINTkzbDM0Ljk4LDQ2LjI1aDc5LjA4TDY3Mi4wNSwzNi40eiI+PC9wYXRoPjxwYXRoIGlkPSJQYXRoXzc2NiIgY2xhc3M9InN0MSIgZD0iTTcwNy4wNyw4Mi42NmgtNzkuMDhsLTM0Ljk3LDQ2LjI5aDc5LjA0TDcwNy4wNyw4Mi42NnoiPjwvcGF0aD48L2c+PC9zdmc+">
   <link rel="stylesheet" href="main.css" />
@@ -80,6 +80,7 @@
 
       <!-- Upload -->
       <div class="sblock">
+
         <div class="upload-zone" id="uploadZone">
           <div class="upl-icon">
             <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="11" x2="12" y2="17"/><polyline points="9 14 12 11 15 14"/></svg>
@@ -153,6 +154,20 @@
           <button class="qbtn" id="remarkTypeNone">None</button>
         </div>
         <div class="check-scroll" id="remarkTypeList"></div>
+      </div>
+
+      <!-- Relation filter -->
+      <div class="sblock" id="relationBlock" style="display:none">
+        <div class="sblock-title">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          Relation
+          <span class="sblock-count" id="relationSelCount">0</span>
+        </div>
+        <div class="quick-btns">
+          <button class="qbtn" id="relationAll">All</button>
+          <button class="qbtn" id="relationNone">None</button>
+        </div>
+        <div class="check-scroll" id="relationList"></div>
       </div>
 
     </aside>
@@ -235,56 +250,30 @@
             <div class="kpi-sub"><span id="kpiClaimCount">0</span> claims recorded</div>
           </div>
 
-          <!-- Debtor group -->
-          <div class="kpi-card kpi-violet">
+          <!-- Positive group: union of Debtor (RPC) + Connected -->
+          <div class="kpi-card kpi-positive">
             <div class="kpi-top">
-              <span class="kpi-lbl">Debtor Count</span>
+              <span class="kpi-lbl">Positive Count</span>
               <div class="kpi-ico">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
               </div>
             </div>
-            <div class="kpi-num" id="kpiDebtors">0</div>
-            <div class="kpi-sub">unique debtor accounts</div>
+            <div class="kpi-num" id="kpiPositiveCount">0</div>
+            <div class="kpi-sub">unique accounts — Debtor (RPC) or Connected</div>
           </div>
 
-          <div class="kpi-card kpi-debtor-bal">
+          <div class="kpi-card kpi-positive-bal">
             <div class="kpi-top">
-              <span class="kpi-lbl">Debtor Balance</span>
+              <span class="kpi-lbl">Positive Balance</span>
               <div class="kpi-ico">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
               </div>
             </div>
-            <div class="kpi-num kpi-num--sm" id="kpiDebtorBal">0.00</div>
-            <div class="kpi-sub">sum of unique debtor balances</div>
-            <button class="btn-download" id="btnDownloadDebtors" title="Export filtered Debtor records">
+            <div class="kpi-num kpi-num--sm" id="kpiPositiveBal">0.00</div>
+            <div class="kpi-sub">sum of unique positive account balances</div>
+            <button class="btn-download btn-download--positive" id="btnDownloadPositive" title="Export filtered Positive records">
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-              Download Debtors
-            </button>
-          </div>
-
-          <div class="kpi-card kpi-green">
-            <div class="kpi-top">
-              <span class="kpi-lbl">Connected Count</span>
-              <div class="kpi-ico">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.6 1.18h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.77a16 16 0 0 0 6 6l.86-.86a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 21.73 16z"/></svg>
-              </div>
-            </div>
-            <div class="kpi-num" id="kpiConnected">0</div>
-            <div class="kpi-sub">successfully contacted</div>
-          </div>
-
-          <div class="kpi-card kpi-connected-bal">
-            <div class="kpi-top">
-              <span class="kpi-lbl">Connected Balance</span>
-              <div class="kpi-ico">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
-              </div>
-            </div>
-            <div class="kpi-num kpi-num--sm" id="kpiConnectedBal">0.00</div>
-            <div class="kpi-sub">sum of unique connected balances</div>
-            <button class="btn-download btn-download--green" id="btnDownloadConnected" title="Export filtered Connected records">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-              Download Connected
+              Download Positive
             </button>
           </div>
 

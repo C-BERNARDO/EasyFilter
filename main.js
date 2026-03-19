@@ -6,10 +6,12 @@ let uniqueDates   = [];
 let uniqueClients = [];
 let uniqueStatuses = [];
 let uniqueRemarkTypes = [];
+let uniqueRelations   = [];
 let selectedDates       = new Set();
 let selectedClients     = new Set();
 let selectedStatuses    = new Set();
 let selectedRemarkTypes = new Set();
+let selectedRelations   = new Set();
 
 /* ═══════════════════════════════════════
    DOM REFERENCES
@@ -44,12 +46,18 @@ const kpiPtpSum      = document.getElementById('kpiPtpSum');
 const kpiPtpCount    = document.getElementById('kpiPtpCount');
 const kpiClaimSum    = document.getElementById('kpiClaimSum');
 const kpiClaimCount  = document.getElementById('kpiClaimCount');
-const kpiDebtors     = document.getElementById('kpiDebtors');
-const kpiDebtorBal   = document.getElementById('kpiDebtorBal');
-const kpiConnected    = document.getElementById('kpiConnected');
-const kpiConnectedBal = document.getElementById('kpiConnectedBal');
-const btnDownloadDebtors   = document.getElementById('btnDownloadDebtors');
-const btnDownloadConnected = document.getElementById('btnDownloadConnected');
+const kpiDebtors     = null; // removed — merged into Positive
+const kpiDebtorBal   = null;
+const kpiConnected   = null;
+const kpiConnectedBal = null;
+const kpiPositiveCount  = document.getElementById('kpiPositiveCount');
+const kpiPositiveBal    = document.getElementById('kpiPositiveBal');
+const btnDownloadDebtors   = null; // removed
+const btnDownloadConnected = null; // removed
+const btnDownloadPositive  = document.getElementById('btnDownloadPositive');
+const relationBlock    = document.getElementById('relationBlock');
+const relationList     = document.getElementById('relationList');
+const relationSelCount = document.getElementById('relationSelCount');
 const kpiAccountsSub = document.getElementById('kpiAccountsSub');
 const kpiBalanceSub  = document.getElementById('kpiBalanceSub');
 const filterSummary  = document.getElementById('filterSummary');
@@ -270,16 +278,29 @@ function buildFilters() {
   uniqueRemarkTypes = [...rs].sort((a,b) => a.localeCompare(b));
   selectedRemarkTypes = new Set(uniqueRemarkTypes);
 
+  // Relations — include a sentinel for blank/empty values
+  const BLANK_RELATION = '__blank__';
+  const rels = new Set();
+  allData.forEach(r => { rels.add(r.relation === '' ? BLANK_RELATION : r.relation); });
+  uniqueRelations = [...rels].sort((a, b) => {
+    if (a === BLANK_RELATION) return 1;   // blanks sort to bottom
+    if (b === BLANK_RELATION) return -1;
+    return a.localeCompare(b);
+  });
+  selectedRelations = new Set(uniqueRelations);
+
   renderDateList();
   renderClientList('');
   renderStatusList();
   renderRemarkTypeList();
+  renderRelationList();
   updateCountBadges();
 
   dateBlock.style.display       = 'block';
   clientBlock.style.display     = 'block';
   statusBlock.style.display     = 'block';
   remarkTypeBlock.style.display = uniqueRemarkTypes.length ? 'block' : 'none';
+  relationBlock.style.display   = uniqueRelations.length  ? 'block' : 'none';
 }
 
 /* ── Date checkboxes ── */
@@ -354,6 +375,40 @@ document.getElementById('remarkTypeNone').addEventListener('click', () => {
   syncCheckboxes(remarkTypeList, selectedRemarkTypes);
   updateCountBadges(); refreshResults();
 });
+
+/* ── Relation checkboxes ── */
+const BLANK_RELATION = '__blank__';
+
+function renderRelationList() {
+  relationList.innerHTML = '';
+  uniqueRelations.forEach(rel => {
+    const isBlank   = rel === BLANK_RELATION;
+    const labelText = isBlank ? '(Blank)' : rel;
+    const item = makeCheckItem(rel, selectedRelations.has(rel), labelText, (checked) => {
+      checked ? selectedRelations.add(rel) : selectedRelations.delete(rel);
+      updateCountBadges();
+      refreshResults();
+    });
+    // Style the blank option distinctly
+    if (isBlank) {
+      const lbl = item.querySelector('.chk-lbl');
+      lbl.style.fontStyle  = 'italic';
+      lbl.style.color      = 'var(--muted2)';
+    }
+    relationList.appendChild(item);
+  });
+}
+
+document.getElementById('relationAll').addEventListener('click', () => {
+  selectedRelations = new Set(uniqueRelations);
+  syncCheckboxes(relationList, selectedRelations);
+  updateCountBadges(); refreshResults();
+});
+document.getElementById('relationNone').addEventListener('click', () => {
+  selectedRelations.clear();
+  syncCheckboxes(relationList, selectedRelations);
+  updateCountBadges(); refreshResults();
+});
 function makeCheckItem(value, checked, labelText, onChange) {
   const label = document.createElement('label');
   label.className = 'chk-item';
@@ -377,6 +432,7 @@ function updateCountBadges() {
   clientSelCount.textContent      = selectedClients.size;
   statusSelCount.textContent      = selectedStatuses.size;
   remarkTypeSelCount.textContent  = selectedRemarkTypes.size;
+  relationSelCount.textContent    = selectedRelations.size;
 }
 
 /* ── Select / None ── */
@@ -415,12 +471,16 @@ document.getElementById('statusNone').addEventListener('click', () => {
    FILTERING & CALCULATION
 ═══════════════════════════════════════ */
 function getFilteredRows() {
-  return allData.filter(r =>
-    selectedDates.has(r.date) &&
-    selectedClients.has(r.client) &&
-    selectedStatuses.has(r.status) &&
-    (uniqueRemarkTypes.length === 0 || selectedRemarkTypes.has(r.remarkType))
-  );
+  return allData.filter(r => {
+    const rel = r.relation === '' ? BLANK_RELATION : r.relation;
+    return (
+      selectedDates.has(r.date) &&
+      selectedClients.has(r.client) &&
+      selectedStatuses.has(r.status) &&
+      (uniqueRemarkTypes.length === 0 || selectedRemarkTypes.has(r.remarkType)) &&
+      (uniqueRelations.length === 0   || selectedRelations.has(rel))
+    );
+  });
 }
 
 /**
@@ -448,19 +508,19 @@ function refreshResults() {
   const ptpSum    = ptpRows.reduce((s, r) => s + r.ptpAmount, 0);
   const claimSum  = claimRows.reduce((s, r) => s + r.claimPaid, 0);
 
-  // Unique Debtors: distinct Account No. values where Relation === 'Debtor'
-  // Also sum their balance (first occurrence per account, same dedup rule)
-  const debtorRows    = filtered.filter(r => r.relation.toLowerCase() === 'debtor');
-  const debtorUnique  = deduplicateByAccount(debtorRows);
-  const totalDebtors  = debtorUnique.length;
-  const totalDebtorBal = debtorUnique.reduce((s, r) => s + r.balance, 0);
-
-  // Unique Connected: distinct Account No. values where Call Status === 'CONNECTED'
-  // Also sum their balance (first occurrence per account, same dedup rule)
-  const connectedRows    = filtered.filter(r => r.callStatus.toUpperCase() === 'CONNECTED');
-  const connectedUnique  = deduplicateByAccount(connectedRows);
-  const totalConnected   = connectedUnique.length;
-  const totalConnectedBal = connectedUnique.reduce((s, r) => s + r.balance, 0);
+  // Positive: union of accounts where Relation === 'Debtor' (RPC) OR Call Status === 'CONNECTED'
+  // Deduplicated by Account No. — each account counted once even if it matches both conditions
+  const positiveAccounts = new Map();
+  filtered.forEach(r => {
+    const isDebtor    = r.relation.toLowerCase() === 'debtor';
+    const isConnected = r.callStatus.toUpperCase() === 'CONNECTED';
+    if ((isDebtor || isConnected) && !positiveAccounts.has(r.account)) {
+      positiveAccounts.set(r.account, r);
+    }
+  });
+  const positiveUnique  = [...positiveAccounts.values()];
+  const totalPositive   = positiveUnique.length;
+  const totalPositiveBal = positiveUnique.reduce((s, r) => s + r.balance, 0);
 
   // Dials: total row count with NO deduplication — every dial attempt counted
   const totalDials = filtered.length;
@@ -475,19 +535,18 @@ function refreshResults() {
 
   kpiPtpCount.textContent   = ptpRows.length.toLocaleString();
   kpiClaimCount.textContent = claimRows.length.toLocaleString();
-  animateNum(kpiDebtors,    totalDebtors,    false);
-  animateNumExact(kpiDebtorBal, totalDebtorBal);
-  animateNum(kpiConnected,  totalConnected,  false);
-  animateNumExact(kpiConnectedBal, totalConnectedBal);
+  animateNum(kpiPositiveCount, totalPositive,    false);
+  animateNumExact(kpiPositiveBal, totalPositiveBal);
 
-  const allDatesSelected      = selectedDates.size === uniqueDates.length;
-  const allClientsSelected    = selectedClients.size === uniqueClients.length;
-  const allStatusesSelected   = selectedStatuses.size === uniqueStatuses.length;
-  const allRemarkTypesSelected = !uniqueRemarkTypes.length || selectedRemarkTypes.size === uniqueRemarkTypes.length;
+  const allDatesSelected        = selectedDates.size === uniqueDates.length;
+  const allClientsSelected      = selectedClients.size === uniqueClients.length;
+  const allStatusesSelected     = selectedStatuses.size === uniqueStatuses.length;
+  const allRemarkTypesSelected  = !uniqueRemarkTypes.length || selectedRemarkTypes.size === uniqueRemarkTypes.length;
+  const allRelationsSelected    = !uniqueRelations.length   || selectedRelations.size   === uniqueRelations.length;
   kpiAccountsSub.textContent = `of ${allData.length} total rows`;
   kpiBalanceSub.textContent  = `${totalAccts} unique account${totalAccts !== 1 ? 's' : ''} summed`;
 
-  renderFilterSummary(allDatesSelected, allClientsSelected, allStatusesSelected, allRemarkTypesSelected);
+  renderFilterSummary(allDatesSelected, allClientsSelected, allStatusesSelected, allRemarkTypesSelected, allRelationsSelected);
   renderBreakdown(unique, filtered);
   tableNote.textContent = `${totalAccts} unique account${totalAccts!==1?'s':''} · ${formatCurrencyExact(totalBal)}`;
 }
@@ -495,11 +554,11 @@ function refreshResults() {
 /* ═══════════════════════════════════════
    FILTER SUMMARY CHIPS
 ═══════════════════════════════════════ */
-function renderFilterSummary(allDates, allClients, allStatuses, allRemarkTypes) {
+function renderFilterSummary(allDates, allClients, allStatuses, allRemarkTypes, allRelations) {
   filterSummary.innerHTML = '';
 
-  if (allDates && allClients && allStatuses && allRemarkTypes) {
-    filterSummary.appendChild(chip_('All dates · All clients · All statuses · All remark types', 'fchip fchip-all'));
+  if (allDates && allClients && allStatuses && allRemarkTypes && allRelations) {
+    filterSummary.appendChild(chip_('All filters active', 'fchip fchip-all'));
     return;
   }
 
@@ -542,6 +601,19 @@ function renderFilterSummary(allDates, allClients, allStatuses, allRemarkTypes) 
       });
       if (selectedRemarkTypes.size > 5)
         filterSummary.appendChild(chip_(`+${selectedRemarkTypes.size - 5} more`, 'fchip fchip-remark'));
+    }
+  }
+
+  if (uniqueRelations.length) {
+    if (allRelations) {
+      filterSummary.appendChild(chip_('All relations', 'fchip fchip-relation'));
+    } else {
+      [...selectedRelations].sort().slice(0, 5).forEach(rel => {
+        const label = rel === BLANK_RELATION ? '(Blank)' : rel;
+        filterSummary.appendChild(chip_(label, 'fchip fchip-relation', 'Relation'));
+      });
+      if (selectedRelations.size > 5)
+        filterSummary.appendChild(chip_(`+${selectedRelations.size - 5} more`, 'fchip fchip-relation'));
     }
   }
 }
@@ -650,84 +722,26 @@ function formatCurrency(n) {
 }
 
 /* ═══════════════════════════════════════
-   DOWNLOAD DEBTORS
+   DOWNLOAD POSITIVE (Debtor RPC + Connected)
 ═══════════════════════════════════════ */
-btnDownloadDebtors.addEventListener('click', downloadDebtors);
-btnDownloadConnected.addEventListener('click', downloadConnected);
+btnDownloadPositive.addEventListener('click', downloadPositive);
 
-function downloadDebtors() {
-  // Get filtered rows → keep only Debtor relation → deduplicate by Account No.
-  const filtered      = getFilteredRows();
-  const debtorRows    = filtered.filter(r => r.relation.toLowerCase() === 'debtor');
-  const debtorUnique  = deduplicateByAccount(debtorRows);
+function downloadPositive() {
+  const filtered = getFilteredRows();
 
-  if (!debtorUnique.length) {
-    alert('No Debtor records found for the current filters.');
-    return;
-  }
-
-  // Build worksheet data — friendly column headers
-  const wsData = [
-    ['Date', 'Account No.', 'Client', 'Status', 'Relation', 'Call Status',
-     'Balance', 'PTP Amount', 'Claim Paid Amount']
-  ];
-
-  debtorUnique.forEach(r => {
-    wsData.push([
-      r.date,
-      r.account,
-      r.client,
-      r.status,
-      r.relation,
-      r.callStatus,
-      r.balance,
-      r.ptpAmount,
-      r.claimPaid
-    ]);
+  // Union: Debtor (RPC) OR Connected — deduplicated by Account No.
+  const positiveMap = new Map();
+  filtered.forEach(r => {
+    const isDebtor    = r.relation.toLowerCase() === 'debtor';
+    const isConnected = r.callStatus.toUpperCase() === 'CONNECTED';
+    if ((isDebtor || isConnected) && !positiveMap.has(r.account)) {
+      positiveMap.set(r.account, r);
+    }
   });
+  const positiveUnique = [...positiveMap.values()];
 
-  // Create workbook and style the header row
-  const wb = XLSX.utils.book_new();
-  const ws = XLSX.utils.aoa_to_sheet(wsData);
-
-  // Set column widths for readability
-  ws['!cols'] = [
-    { wch: 14 }, // Date
-    { wch: 18 }, // Account No.
-    { wch: 24 }, // Client
-    { wch: 16 }, // Status
-    { wch: 12 }, // Relation
-    { wch: 16 }, // Call Status
-    { wch: 16 }, // Balance
-    { wch: 16 }, // PTP Amount
-    { wch: 20 }, // Claim Paid Amount
-  ];
-
-  XLSX.utils.book_append_sheet(wb, ws, 'Debtors');
-
-  // Build a descriptive filename with active filters
-  const datePart   = selectedDates.size === uniqueDates.length
-    ? 'AllDates'
-    : [...selectedDates].sort().join('_').replace(/[\s,]/g, '').slice(0, 40);
-  const statusPart = selectedStatuses.size === uniqueStatuses.length
-    ? 'AllStatuses'
-    : [...selectedStatuses].sort().join('_').replace(/\s/g, '').slice(0, 30);
-  const timestamp  = new Date().toISOString().slice(0,10);
-  const filename   = `Debtors_${datePart}_${statusPart}_${timestamp}.xlsx`;
-
-  XLSX.writeFile(wb, filename);
-}
-
-/* ═══════════════════════════════════════
-   DOWNLOAD CONNECTED
-═══════════════════════════════════════ */
-function downloadConnected() {
-  const filtered         = getFilteredRows();
-  const connectedRows    = filtered.filter(r => r.callStatus.toUpperCase() === 'CONNECTED');
-  const connectedUnique  = deduplicateByAccount(connectedRows);
-
-  if (!connectedUnique.length) {
-    alert('No Connected records found for the current filters.');
+  if (!positiveUnique.length) {
+    alert('No Positive records (Debtor/Connected) found for the current filters.');
     return;
   }
 
@@ -735,53 +749,32 @@ function downloadConnected() {
     ['Date', 'Account No.', 'Client', 'Status', 'Relation', 'Call Status',
      'Balance', 'PTP Amount', 'Claim Paid Amount']
   ];
-
-  connectedUnique.forEach(r => {
-    wsData.push([
-      r.date,
-      r.account,
-      r.client,
-      r.status,
-      r.relation,
-      r.callStatus,
-      r.balance,
-      r.ptpAmount,
-      r.claimPaid
-    ]);
+  positiveUnique.forEach(r => {
+    wsData.push([r.date, r.account, r.client, r.status, r.relation,
+                 r.callStatus, r.balance, r.ptpAmount, r.claimPaid]);
   });
 
   const wb = XLSX.utils.book_new();
   const ws = XLSX.utils.aoa_to_sheet(wsData);
-
   ws['!cols'] = [
-    { wch: 14 }, // Date
-    { wch: 18 }, // Account No.
-    { wch: 24 }, // Client
-    { wch: 16 }, // Status
-    { wch: 12 }, // Relation
-    { wch: 16 }, // Call Status
-    { wch: 16 }, // Balance
-    { wch: 16 }, // PTP Amount
-    { wch: 20 }, // Claim Paid Amount
+    { wch: 14 }, { wch: 18 }, { wch: 24 }, { wch: 16 },
+    { wch: 12 }, { wch: 16 }, { wch: 16 }, { wch: 16 }, { wch: 20 }
   ];
+  XLSX.utils.book_append_sheet(wb, ws, 'Positive');
 
-  XLSX.utils.book_append_sheet(wb, ws, 'Connected');
-
-  const datePart   = selectedDates.size === uniqueDates.length
-    ? 'AllDates'
+  const datePart   = selectedDates.size === uniqueDates.length ? 'AllDates'
     : [...selectedDates].sort().join('_').replace(/[\s,]/g, '').slice(0, 40);
-  const statusPart = selectedStatuses.size === uniqueStatuses.length
-    ? 'AllStatuses'
+  const statusPart = selectedStatuses.size === uniqueStatuses.length ? 'AllStatuses'
     : [...selectedStatuses].sort().join('_').replace(/\s/g, '').slice(0, 30);
   const timestamp  = new Date().toISOString().slice(0, 10);
-  const filename   = `Connected_${datePart}_${statusPart}_${timestamp}.xlsx`;
-
-  XLSX.writeFile(wb, filename);
+  XLSX.writeFile(wb, `Positive_${datePart}_${statusPart}_${timestamp}.xlsx`);
 }
 
 function resetAll() {
-  allData = []; uniqueDates = []; uniqueClients = []; uniqueStatuses = []; uniqueRemarkTypes = [];
-  selectedDates.clear(); selectedClients.clear(); selectedStatuses.clear(); selectedRemarkTypes.clear();
+  allData = []; uniqueDates = []; uniqueClients = []; uniqueStatuses = [];
+  uniqueRemarkTypes = []; uniqueRelations = [];
+  selectedDates.clear(); selectedClients.clear(); selectedStatuses.clear();
+  selectedRemarkTypes.clear(); selectedRelations.clear();
 
   fileInput.value = '';
   fileChips.innerHTML = '';
@@ -790,10 +783,13 @@ function resetAll() {
   clientBlock.style.display     = 'none';
   statusBlock.style.display     = 'none';
   remarkTypeBlock.style.display = 'none';
+  relationBlock.style.display   = 'none';
   topbarMeta.style.display      = 'none';
   emptyState.style.display      = 'flex';
   dashboard.style.display       = 'none';
-  dateList.innerHTML = ''; clientList.innerHTML = ''; statusList.innerHTML = ''; remarkTypeList.innerHTML = '';
+  dateList.innerHTML = ''; clientList.innerHTML = ''; statusList.innerHTML = '';
+  remarkTypeList.innerHTML = ''; relationList.innerHTML = '';
   clientSearch.value = '';
-  dateSelCount.textContent = clientSelCount.textContent = statusSelCount.textContent = remarkTypeSelCount.textContent = '0';
+  dateSelCount.textContent = clientSelCount.textContent = statusSelCount.textContent =
+    remarkTypeSelCount.textContent = relationSelCount.textContent = '0';
 }

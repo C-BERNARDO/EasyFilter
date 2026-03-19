@@ -463,15 +463,14 @@ body {
 }
 
 /* Accent colors per card */
-.kpi-blue::before         { background: #1d6fd8; }
-.kpi-dials::before        { background: #0369a1; }
-.kpi-teal::before         { background: #0a7c6e; }
-.kpi-amber::before        { background: #b45309; }
-.kpi-rose::before         { background: var(--red); }
-.kpi-violet::before       { background: #6d28d9; }
-.kpi-debtor-bal::before   { background: #9333ea; }
-.kpi-green::before        { background: var(--green); }
-.kpi-connected-bal::before{ background: #047857; }
+.kpi-blue::before           { background: #1d6fd8; }
+.kpi-dials::before          { background: #0369a1; }
+.kpi-teal::before           { background: #0a7c6e; }
+.kpi-amber::before          { background: #b45309; }
+.kpi-rose::before           { background: var(--red); }
+.kpi-positive::before       { background: #0891b2; }
+.kpi-positive-bal::before   { background: #0e7490; }
+.kpi-green::before          { background: var(--green); }
 
 .kpi-top {
   display: flex; align-items: flex-start;
@@ -486,15 +485,14 @@ body {
   width: 30px; height: 30px; border-radius: 7px;
   display: grid; place-items: center; flex-shrink: 0;
 }
-.kpi-blue         .kpi-ico { background: #eff6ff; color: #1d6fd8; }
-.kpi-dials        .kpi-ico { background: #e0f2fe; color: #0369a1; }
-.kpi-teal         .kpi-ico { background: #f0fdfa; color: #0a7c6e; }
-.kpi-amber        .kpi-ico { background: #fffbeb; color: #b45309; }
-.kpi-rose         .kpi-ico { background: var(--red-light); color: var(--red); }
-.kpi-violet       .kpi-ico { background: #f5f3ff; color: #6d28d9; }
-.kpi-debtor-bal   .kpi-ico { background: #fdf4ff; color: #9333ea; }
-.kpi-green        .kpi-ico { background: var(--green-lt); color: var(--green); }
-.kpi-connected-bal .kpi-ico { background: #ecfdf5; color: #047857; }
+.kpi-blue           .kpi-ico { background: #eff6ff; color: #1d6fd8; }
+.kpi-dials          .kpi-ico { background: #e0f2fe; color: #0369a1; }
+.kpi-teal           .kpi-ico { background: #f0fdfa; color: #0a7c6e; }
+.kpi-amber          .kpi-ico { background: #fffbeb; color: #b45309; }
+.kpi-rose           .kpi-ico { background: var(--red-light); color: var(--red); }
+.kpi-positive       .kpi-ico { background: #ecfeff; color: #0891b2; }
+.kpi-positive-bal   .kpi-ico { background: #cffafe; color: #0e7490; }
+.kpi-green          .kpi-ico { background: var(--green-lt); color: var(--green); }
 
 .kpi-num {
   font-size: 1.9rem; font-weight: 700; line-height: 1;
@@ -525,9 +523,16 @@ body {
   box-shadow: 0 1px 4px rgba(4,120,87,.25);
 }
 .btn-download--green:hover { background: #065f46; box-shadow: 0 3px 10px rgba(4,120,87,.3); }
+
+.btn-download--positive {
+  background: #0891b2;
+  box-shadow: 0 1px 4px rgba(8,145,178,.25);
+}
+.btn-download--positive:hover { background: #0e7490; box-shadow: 0 3px 10px rgba(8,145,178,.3); }
+
+/* Colored number overrides */
 .kpi-rose         .kpi-num { color: var(--red); }
-.kpi-debtor-bal   .kpi-num { color: #9333ea; }
-.kpi-connected-bal .kpi-num { color: #047857; }
+.kpi-positive-bal .kpi-num { color: #0e7490; }
 
 .kpi-sub {
   font-size: .71rem; color: var(--muted2);
@@ -545,11 +550,12 @@ body {
   padding: 3px 10px; border-radius: 99px; font-size: .72rem; font-weight: 500;
 }
 .fchip-label { font-size: .65rem; opacity: .65; font-style: normal; margin-right: 1px; }
-.fchip-date   { background: #eff6ff; border: 1px solid #bfdbfe; color: #1d4ed8; }
-.fchip-client { background: #f0fdf4; border: 1px solid #bbf7d0; color: #15803d; }
-.fchip-status { background: var(--red-light); border: 1px solid var(--red-mid); color: var(--red); }
-.fchip-remark { background: #fff7ed; border: 1px solid #fed7aa; color: #c2410c; }
-.fchip-all    { background: var(--bg2); border: 1px solid var(--border2); color: var(--muted); }
+.fchip-date     { background: #eff6ff; border: 1px solid #bfdbfe; color: #1d4ed8; }
+.fchip-client   { background: #f0fdf4; border: 1px solid #bbf7d0; color: #15803d; }
+.fchip-status   { background: var(--red-light); border: 1px solid var(--red-mid); color: var(--red); }
+.fchip-remark   { background: #fff7ed; border: 1px solid #fed7aa; color: #c2410c; }
+.fchip-relation { background: #ecfeff; border: 1px solid #a5f3fc; color: #0e7490; }
+.fchip-all      { background: var(--bg2); border: 1px solid var(--border2); color: var(--muted); }
 
 /* ══════════════════════════════════════
    TABLE CARD
