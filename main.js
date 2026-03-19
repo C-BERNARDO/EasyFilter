@@ -14,6 +14,11 @@ let selectedRemarkTypes = new Set();
 let selectedRelations   = new Set();
 
 /* ═══════════════════════════════════════
+   CONSTANTS
+═══════════════════════════════════════ */
+const BLANK_RELATION = '__blank__'; // sentinel for empty Relation values
+
+/* ═══════════════════════════════════════
    DOM REFERENCES
 ═══════════════════════════════════════ */
 const fileInput      = document.getElementById('fileInput');
@@ -46,14 +51,8 @@ const kpiPtpSum      = document.getElementById('kpiPtpSum');
 const kpiPtpCount    = document.getElementById('kpiPtpCount');
 const kpiClaimSum    = document.getElementById('kpiClaimSum');
 const kpiClaimCount  = document.getElementById('kpiClaimCount');
-const kpiDebtors     = null; // removed — merged into Positive
-const kpiDebtorBal   = null;
-const kpiConnected   = null;
-const kpiConnectedBal = null;
 const kpiPositiveCount  = document.getElementById('kpiPositiveCount');
 const kpiPositiveBal    = document.getElementById('kpiPositiveBal');
-const btnDownloadDebtors   = null; // removed
-const btnDownloadConnected = null; // removed
 const btnDownloadPositive  = document.getElementById('btnDownloadPositive');
 const relationBlock    = document.getElementById('relationBlock');
 const relationList     = document.getElementById('relationList');
@@ -279,7 +278,6 @@ function buildFilters() {
   selectedRemarkTypes = new Set(uniqueRemarkTypes);
 
   // Relations — include a sentinel for blank/empty values
-  const BLANK_RELATION = '__blank__';
   const rels = new Set();
   allData.forEach(r => { rels.add(r.relation === '' ? BLANK_RELATION : r.relation); });
   uniqueRelations = [...rels].sort((a, b) => {
@@ -377,8 +375,6 @@ document.getElementById('remarkTypeNone').addEventListener('click', () => {
 });
 
 /* ── Relation checkboxes ── */
-const BLANK_RELATION = '__blank__';
-
 function renderRelationList() {
   relationList.innerHTML = '';
   uniqueRelations.forEach(rel => {
@@ -671,9 +667,13 @@ function renderBreakdown(allUnique, filteredRows) {
 /* ═══════════════════════════════════════
    ANIMATED COUNTER
 ═══════════════════════════════════════ */
-const _counters = new WeakMap();
+// Use a plain Map (not WeakMap) — WeakMap only accepts objects as keys and throws
+// "Invalid value used as weak map key" if a null or primitive is passed, which can
+// happen on GitHub Pages where DOM elements may not resolve at call time.
+const _counters = new Map();
 
 function animateNum(el, target, isCurrency) {
+  if (!el) return; // null-guard: skip if element not found in DOM
   const prev = _counters.get(el) || 0;
   _counters.set(el, target);
   if (prev === target) return;
@@ -683,17 +683,17 @@ function animateNum(el, target, isCurrency) {
 
   function step(now) {
     const t  = Math.min((now - start) / duration, 1);
-    const e  = 1 - Math.pow(1 - t, 3); // ease-out cubic
+    const e  = 1 - Math.pow(1 - t, 3);
     const v  = prev + (target - prev) * e;
     el.textContent = isCurrency ? formatCurrencyExact(v) : Math.round(v).toLocaleString();
     if (t < 1) requestAnimationFrame(step);
-    else { el.textContent = isCurrency ? formatCurrencyExact(target) : target.toLocaleString(); }
+    else el.textContent = isCurrency ? formatCurrencyExact(target) : target.toLocaleString();
   }
   requestAnimationFrame(step);
 }
 
-/* Animate to exact full decimal value (no abbreviation) */
 function animateNumExact(el, target) {
+  if (!el) return; // null-guard
   const prev = _counters.get(el) || 0;
   _counters.set(el, target);
   if (prev === target) return;
